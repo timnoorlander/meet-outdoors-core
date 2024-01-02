@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto';
@@ -8,16 +13,34 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export class AuthService {
   constructor(private prisma: PrismaService) {}
 
-  login(loginDto: LoginDto) {
-    return 'sucessfully signed up.';
+  async login(dto: LoginDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordVerified = await bcrypt.compare(
+      dto.password,
+      user.password,
+    );
+
+    if (!isPasswordVerified) {
+      throw new UnauthorizedException('Password incorrect');
+    }
+
+    return { msg: 'Logged in succesfully' };
   }
 
-  async register(registerDto: RegisterDto) {
-    const { email, password } = registerDto;
-    const numberOfHashRounds = 10;
+  async register({ email, password }: RegisterDto) {
+    const NUMBER_OF_HASH_ROUNDS = 10;
 
     try {
-      const hashedPassword = await bcrypt.hash(password, numberOfHashRounds);
+      const hashedPassword = await bcrypt.hash(password, NUMBER_OF_HASH_ROUNDS);
 
       const user = await this.prisma.user.create({
         data: { email, password: hashedPassword },
