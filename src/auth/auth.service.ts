@@ -65,15 +65,20 @@ export class AuthService {
     }
   }
 
-  signToken(userId: string, email: string): Promise<string> {
+  async signToken(
+    userId: string,
+    email: string,
+  ): Promise<{ accessToken: string }> {
     const payload = {
       sub: userId,
       email: email,
     };
 
-    return this.jwt.signAsync(payload, {
+    const accessToken = await this.jwt.signAsync(payload, {
       expiresIn: '15m',
       secret: process.env.JWT_SECRET,
     });
+
+    return { accessToken };
   }
 }
