@@ -8,10 +8,14 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto, RegisterDto } from './dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable({})
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+  ) {}
 
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -33,7 +37,7 @@ export class AuthService {
       throw new UnauthorizedException('Password incorrect');
     }
 
-    return { msg: 'Logged in succesfully' };
+    return this.signToken(user.id, user.email);
   }
 
   async register({ email, password }: RegisterDto) {
@@ -44,10 +48,9 @@ export class AuthService {
 
       const user = await this.prisma.user.create({
         data: { email, password: hashedPassword },
-        select: { email: true, createdAt: true },
       });
 
-      return user;
+      return this.signToken(user.id, user.email);
     } catch (error) {
       const duplicateEntryErrorCode = 'P2002';
 
@@ -60,5 +63,17 @@ export class AuthService {
 
       throw error;
     }
+  }
+
+  signToken(userId: string, email: string): Promise<string> {
+    const payload = {
+      sub: userId,
+      email: email,
+    };
+
+    return this.jwt.signAsync(payload, {
+      expiresIn: '15m',
+      secret: process.env.JWT_SECRET,
+    });
   }
 }
