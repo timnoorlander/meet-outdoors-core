@@ -17,7 +17,7 @@ export class AuthService {
     private jwt: JwtService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async getAccessToken(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
@@ -65,20 +65,15 @@ export class AuthService {
     }
   }
 
-  async signToken(
-    userId: string,
-    email: string,
-  ): Promise<{ accessToken: string }> {
+  signToken(userId: string, email: string): Promise<string> {
     const payload = {
       sub: userId,
       email: email,
     };
 
-    const accessToken = await this.jwt.signAsync(payload, {
+    return this.jwt.signAsync(payload, {
       expiresIn: '15m',
       secret: process.env.JWT_SECRET,
     });
-
-    return { accessToken };
   }
 }
