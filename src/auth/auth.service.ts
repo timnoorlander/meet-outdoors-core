@@ -24,8 +24,12 @@ export class AuthService {
       },
     });
 
+    const unauthorizedException = new UnauthorizedException(
+      'E-mail address or password incorrect.',
+    );
+
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw unauthorizedException;
     }
 
     const isPasswordVerified = await bcrypt.compare(
@@ -34,7 +38,7 @@ export class AuthService {
     );
 
     if (!isPasswordVerified) {
-      throw new UnauthorizedException('Password incorrect');
+      throw unauthorizedException;
     }
 
     return this.signToken(user.id, user.email);
