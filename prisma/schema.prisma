@@ -22,7 +22,7 @@ model User {
   lastName  String?
   occupation String?
 
-  actvities Activity[]
+  activities Activity[]
 
   @@map("users")
 }
@@ -35,11 +35,10 @@ model Activity {
   title         String
   category      String
   description   String?
-  location      String
   startTime     DateTime
-  duration      Int
+  endTime       DateTime?
 
-  address  String
+  address  String?
   city     String
   country  String
   postcode String
